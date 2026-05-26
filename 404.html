@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pilas-melonDS</title>
+  <link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark">PM</span>
+        <div>
+          <h1>Pilas-melonDS</h1>
+          <p id="statusText">Initializing</p>
+        </div>
+      </div>
+      <div class="actions">
+        <label class="file-button">
+          ROM
+          <input id="romInput" type="file" accept=".nds,.dsi,.srl,application/octet-stream">
+        </label>
+        <label class="file-button">
+          Install .cia file
+          <input id="ciaInput" type="file" accept=".cia,application/octet-stream">
+        </label>
+        <button id="bootMenuBtn" type="button" disabled>Boot menu</button>
+        <button id="pauseBtn" type="button" disabled>Pause</button>
+        <button id="resetBtn" type="button" disabled>Reset</button>
+        <button id="audioBtn" type="button" disabled>Audio</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <div class="stage">
+        <canvas id="screenCanvas" width="256" height="384" tabindex="0" aria-label="Nintendo DS video"></canvas>
+        <button id="fullscreenExitBtn" class="fullscreen-exit" type="button">Exit</button>
+        <div id="virtualControls" class="touch-controls virtual-controls" aria-label="Touch controls">
+          <div class="mobile-shoulders">
+            <button data-bit="9" type="button">L</button>
+            <button data-bit="8" type="button">R</button>
+          </div>
+          <div class="mobile-bottom">
+            <div class="dpad">
+              <button data-bit="6" class="up" type="button">Up</button>
+              <button data-bit="5" class="left" type="button">Left</button>
+              <button data-bit="4" class="right" type="button">Right</button>
+              <button data-bit="7" class="down" type="button">Down</button>
+            </div>
+            <div class="system-cluster">
+              <button data-bit="2" type="button">Select</button>
+              <button data-bit="3" type="button">Start</button>
+            </div>
+            <div class="face-buttons">
+              <button data-bit="10" type="button">X</button>
+              <button data-bit="0" type="button">A</button>
+              <button data-bit="11" type="button">Y</button>
+              <button data-bit="1" type="button">B</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="side-panel">
+        <div class="play-panel">
+          <div>
+            <span>Session</span>
+            <strong id="sessionValue">Ready</strong>
+          </div>
+          <button id="fullscreenBtn" type="button">Fullscreen</button>
+          <button id="advancedToggleBtn" class="advanced-toggle" type="button" aria-expanded="false" aria-controls="advancedContent">
+            Advanced options
+          </button>
+        </div>
+
+        <div id="advancedContent" class="advanced-content" hidden>
+          <div class="meter-grid">
+            <div>
+              <span>FPS</span>
+              <strong id="fpsValue">0</strong>
+            </div>
+            <div>
+              <span>Speed</span>
+              <strong id="speedValue">100%</strong>
+            </div>
+            <div>
+              <span>Save</span>
+              <strong id="saveValue">-</strong>
+            </div>
+            <div>
+              <span>Core</span>
+              <strong id="coreValue">-</strong>
+            </div>
+            <div>
+              <span>Render</span>
+              <strong id="rendererValue">Canvas</strong>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <div class="panel-heading">System</div>
+            <div class="settings-grid">
+              <label>
+                Console
+                <select id="consoleModeSelect">
+                  <option value="nds">Nintendo DS</option>
+                  <option value="dsi">Nintendo DSi</option>
+                </select>
+              </label>
+              <label>
+                Boot
+                <select id="bootModeSelect">
+                  <option value="direct">Direct ROM boot</option>
+                  <option value="firmware">Firmware menu</option>
+                </select>
+              </label>
+              <label class="check-row">
+                <input id="dsiDspHleInput" type="checkbox" checked>
+                DSi DSP HLE
+              </label>
+            </div>
+            <div class="system-files">
+              <label>
+                DS BIOS9 (optional)
+                <input id="bios9Input" type="file" accept=".bin,application/octet-stream">
+              </label>
+              <label>
+                DS BIOS7 (optional)
+                <input id="bios7Input" type="file" accept=".bin,application/octet-stream">
+              </label>
+              <label>
+                Firmware
+                <input id="firmwareInput" type="file" accept=".bin,application/octet-stream">
+              </label>
+              <label>
+                DSi BIOS9i
+                <input id="dsiBios9Input" type="file" accept=".bin,application/octet-stream">
+              </label>
+              <label>
+                DSi BIOS7i
+                <input id="dsiBios7Input" type="file" accept=".bin,application/octet-stream">
+              </label>
+              <label>
+                DSi Firmware
+                <input id="dsiFirmwareInput" type="file" accept=".bin,application/octet-stream">
+              </label>
+              <label>
+                Manifest
+                <input id="manifestInput" type="file" accept=".json,application/json">
+              </label>
+            </div>
+            <div class="manifest-row">
+              <input id="manifestUrlInput" type="url" placeholder="JSON manifest URL" autocomplete="off">
+              <button id="manifestLoadBtn" type="button">Load</button>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <div class="panel-heading">Internal storage and SD card</div>
+            <div class="settings-grid storage-settings">
+              <label>
+                DSiWare install target
+                <select id="dsiwareInstallTargetSelect">
+                  <option value="nand">DSi NAND</option>
+                  <option value="sd">Virtual SD card (hiyaCFW layout)</option>
+                </select>
+              </label>
+              <label>
+                CIA common key
+                <input id="ciaCommonKeyInput" type="password" maxlength="47" placeholder="32 hex chars for encrypted CIA" autocomplete="off">
+              </label>
+            </div>
+            <div class="storage-grid">
+              <div class="storage-card">
+                <div>
+                  <span>DSi internal NAND</span>
+                  <strong id="nandInfoValue">Not stored</strong>
+                </div>
+                <div class="storage-actions">
+                  <button id="dsiNandDownloadBtn" type="button" disabled>Download NAND</button>
+                  <label class="file-button">
+                    Replace NAND
+                    <input id="dsiNandInput" type="file" accept=".bin,.nand,application/octet-stream">
+                  </label>
+                </div>
+              </div>
+              <div class="storage-card">
+                <div>
+                  <span>DSi virtual SD card</span>
+                  <strong id="sdInfoValue">Not stored</strong>
+                </div>
+                <div class="settings-grid compact-settings">
+                  <label class="check-row">
+                    <input id="dsiSdEnableInput" type="checkbox" checked>
+                    Enable virtual SD
+                  </label>
+                  <label>
+                    New SD size
+                    <select id="dsiSdSizeSelect">
+                      <option value="64">64 MB</option>
+                      <option value="128">128 MB</option>
+                      <option value="256">256 MB</option>
+                      <option value="512">512 MB</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="storage-actions">
+                  <button id="dsiSdDownloadBtn" type="button" disabled>Download SD image</button>
+                  <label class="file-button">
+                    Replace SD image
+                    <input id="dsiSdInput" type="file" accept=".img,.bin,application/octet-stream">
+                  </label>
+                </div>
+              </div>
+              <div class="storage-card">
+                <div>
+                  <span>Homebrew / DLDI SD card</span>
+                  <strong id="dldiSdInfoValue">Not stored</strong>
+                </div>
+                <div class="settings-grid compact-settings">
+                  <label class="check-row">
+                    <input id="dldiSdEnableInput" type="checkbox" checked>
+                    Enable DLDI SD
+                  </label>
+                  <label>
+                    New DLDI SD size
+                    <select id="dldiSdSizeSelect">
+                      <option value="64">64 MB</option>
+                      <option value="128">128 MB</option>
+                      <option value="256">256 MB</option>
+                      <option value="512">512 MB</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="storage-actions">
+                  <button id="dldiSdDownloadBtn" type="button" disabled>Download DLDI SD</button>
+                  <label class="file-button">
+                    Replace DLDI SD
+                    <input id="dldiSdInput" type="file" accept=".img,.bin,application/octet-stream">
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <div class="panel-heading">UI and canvas</div>
+            <div class="settings-grid">
+              <label>
+                Render
+                <select id="rendererSelect">
+                  <option value="canvas2d">Canvas</option>
+                  <option value="webgl2">WebGL 2</option>
+                  <option value="webgpu">WebGPU</option>
+                </select>
+              </label>
+              <label>
+                Accent
+                <select id="accentSelect">
+                  <option value="mint">Mint</option>
+                  <option value="blue">Blue</option>
+                  <option value="gold">Gold</option>
+                  <option value="rose">Rose</option>
+                </select>
+              </label>
+              <label>
+                Canvas
+                <select id="canvasSizeSelect">
+                  <option value="compact">Compact</option>
+                  <option value="normal">Normal</option>
+                  <option value="large">Large</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <div class="panel-heading">Inputs</div>
+            <div class="input-bindings" id="bindingsPanel" aria-label="Inputs"></div>
+            <button id="resetBindingsBtn" type="button">Reset inputs</button>
+          </div>
+
+          <div class="advanced-section">
+            <div class="panel-heading">DSi media and Wi-Fi</div>
+            <div class="settings-grid">
+              <label>
+                Camera
+                <select id="cameraSelect">
+                  <option value="0">Outer</option>
+                  <option value="1">Inner</option>
+                </select>
+              </label>
+              <button id="cameraEnableBtn" type="button">Enable camera</button>
+              <button id="micEnableBtn" type="button">Enable microphone</button>
+              <label>
+                Wi-Fi
+                <select id="wifiModeSelect">
+                  <option value="browser">Browser internet</option>
+                  <option value="local">Local tabs</option>
+                  <option value="websocket">WebSocket</option>
+                  <option value="off">Off</option>
+                </select>
+              </label>
+            </div>
+            <div class="manifest-row">
+              <input id="wifiBridgeUrlInput" type="url" placeholder="ws://localhost:8767/pilas-wifi" autocomplete="off">
+              <button id="wifiBridgeBtn" type="button">Connect Wi-Fi</button>
+            </div>
+            <div class="media-status">
+              <span>Media: <strong id="mediaValue">off</strong></span>
+              <span>Wi-Fi: <strong id="wifiValue">off</strong></span>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <div class="panel-heading">Save state</div>
+            <div class="savestate-grid">
+              <button id="stateSaveFileBtn" type="button">Save file</button>
+              <label class="file-button">
+                Load file
+                <input id="stateFileInput" type="file" accept=".pilasav,application/octet-stream">
+              </label>
+              <button id="stateSaveBrowserBtn" type="button">Save to browser</button>
+              <button id="stateLoadBrowserBtn" type="button">Load from browser</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div id="stateModal" class="modal-backdrop" hidden>
+    <div class="state-modal" role="dialog" aria-modal="true" aria-labelledby="stateModalTitle">
+      <div class="modal-head">
+        <strong id="stateModalTitle">Save states</strong>
+        <button id="stateModalCloseBtn" type="button" aria-label="Close">Close</button>
+      </div>
+      <div id="stateSlotList" class="slot-list"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
